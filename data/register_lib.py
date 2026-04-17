@@ -1,12 +1,13 @@
 import flask
 
 from . import db_session
-from .librarians import Librarian 
+from .librarians import Librarian
 
 blueprint = flask.Blueprint(
     'register_lib_api',
     __name__,
 )
+
 
 @blueprint.route('/api/reg_lib', methods=["GET", "POST"])
 def get_news():
@@ -22,4 +23,3 @@ def get_news():
     librarian.set_password(flask.request.json['hashed_password'])
     db_sess.add(librarian)
     db_sess.commit()
-

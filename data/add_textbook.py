@@ -1,16 +1,16 @@
 import flask
 
 from . import db_session
-from .users import User
+from .textbook import TextBook
 
 blueprint = flask.Blueprint(
-    'users_add_api',
+    'textbooks_add_api',
     __name__,
 )
 
 
-@blueprint.route('/api/add_users', methods=["GET", "POST"])
-def get_news():
+@blueprint.route('/api/add_textbook', methods=["POST"])
+def get_textbook():
     db_sess = db_session.create_session()
 
     data = flask.request.get_json()
@@ -18,22 +18,23 @@ def get_news():
     if not data:
         return flask.jsonify({"error": "No JSON data provided"}), 400
 
-    required_fields = ["surname", "name", "middlename", "email", "class_name"]
+    required_fields = ["itemtype", "tbn", "yep", "id_book", "authors_list"]
     for field in required_fields:
         if field not in data:
             return flask.jsonify({"error": f"Missing field: {field}"}), 400
-        
-    users = User(
-        surname=flask.request.json['surname'],
-        name=flask.request.json['name'],
-        middlename=flask.request.json['middlename'],
-        email=flask.request.json['email']
+
+    textbooks = TextBook(
+        itemtype=data['itemtype'],
+        tbn=data['tbn'],
+        yep=data['yep'],
+        id_book=data['id_book'],
+        authors_list=data['authors_list']
     )
 
-    db_sess.add(users)
+    db_sess.add(textbooks)
     db_sess.commit()
 
     return flask.jsonify({
         "status": "success",
-        "message": "User added successfully"
+        "message": "Textbook added successfully"
     }), 200
