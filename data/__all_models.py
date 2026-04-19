@@ -1,4 +1,5 @@
 from . import add_users
+from . import register_lib
 from . import books 
 from . import classes
 from . import librarians
