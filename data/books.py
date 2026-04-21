@@ -16,4 +16,4 @@ class Book(SqlAlchemyBase, UserMixin, SerializerMixin):
     yep = sqlalchemy.Column(
         sqlalchemy.Integer, nullable=False)  #! yearofpublication
     taken = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
-    tbw = sqlalchemy.Column(sqlalchemy.String, default="-", nullable=True) #! taken by whom
+    tbw = sqlalchemy.Column(sqlalchemy.String, nullable=True) #! taken by whom

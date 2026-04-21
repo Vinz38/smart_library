@@ -15,5 +15,5 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     middlename = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     email = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     class_name = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    book_list = sqlalchemy.Column(sqlalchemy.JSON, nullable=True, default='-')
-    textbook_list = sqlalchemy.Column(sqlalchemy.JSON, nullable=True, default='-')
+    book_list = sqlalchemy.Column(sqlalchemy.JSON, nullable=True, default=dict)
+    textbook_list = sqlalchemy.Column(sqlalchemy.JSON, nullable=True, default=dict)

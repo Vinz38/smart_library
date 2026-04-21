@@ -1,25 +1,36 @@
 import flask
 
-from . import db_session
-from .librarians import Librarian
+from data import db_session
+from data.librarians import Librarian
 
-blueprint = flask.Blueprint(
-    'register_lib_api',
-    __name__,
-)
+from flask_restful import reqparse, abort, Api, Resource
+
+parser = reqparse.RequestParser()
+parser.add_argument('surname', required=True, type=str)
+parser.add_argument('name', required=True, type=str)
+parser.add_argument('middlename', required=True, type=str)
+parser.add_argument('phonenumber', required=True)
+parser.add_argument('hashed_password', required=True)
 
 
-@blueprint.route('/api/reg_lib', methods=["GET", "POST"])
-def get_news():
-    db_sess = db_session.create_session()
+class LibrarianListResource(Resource):
+    def post(self):
+        args = parser.parse_args()
+        db_sess = db_session.create_session()
+        librarian = Librarian(
+            surname=args['surname'],
+            name=args['name'],
+            middlename=args['middlename'],
+            email=args['email'],
+            phonenumber=args['phonenumber'],
+        )
 
-    librarian = Librarian(
-        surname=flask.request.json['surname'],
-        name=flask.request.json['name'],
-        middlename=flask.request.json['middlename'],
-        email=flask.request.json['email'],
-        class_name=flask.request.json['phonenumber'],
-    )
-    librarian.set_password(flask.request.json['hashed_password'])
-    db_sess.add(librarian)
-    db_sess.commit()
+        librarian.set_password(args['hashed_password'])
+        db_sess.add(librarian)
+        db_sess.commit()
+        return flask.jsonify({'sucsess': 'OK'})
+
+    def get(self):
+        db_sess = db_session.create_session()
+        librarian = db_sess.query(Librarian).all()
+        return flask.jsonify({'librarians': [item.to_dict(only=('surname', 'name', 'middlename', 'email', 'phonenumber', 'hashed_password')) for item in librarian]})

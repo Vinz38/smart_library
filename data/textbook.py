@@ -15,4 +15,7 @@ class TextBook(SqlAlchemyBase, UserMixin, SerializerMixin):
     tbn = sqlalchemy.Column(
         sqlalchemy.String, nullable=False)  #! textbookname
     yep = sqlalchemy.Column(sqlalchemy.Integer, nullable=False) #! yearofpublication
+    fwc = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     authors_list = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    taken = sqlalchemy.Column(sqlalchemy.Boolean, nullable=False)
+    tbw = sqlalchemy.Column(sqlalchemy.String, nullable=True)

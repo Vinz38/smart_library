@@ -1,13 +1,47 @@
-from requests import post
+from requests import post, put, get, delete
 
 
-response = post('http://127.0.0.1:8080/api/add_textbook', json={
+'''response = post('http://127.0.0.1:5050/api/textbook', json={
     "itemtype": "Математика",
+    "id_book": 123123123,
     "tbn": "Геометрия Углубленный Уровень",
     "yep": 2025,
-    "id_book": 123123123,
-    "authors_list": "Мерзляк, и т.д."
+    "fwc": "10 класс",
+    "authors_list": "Мерзляк",
+    "taken": False
+})'''
+
+'''response1 = post('http://127.0.0.1:5050/api/textbook', json={
+    "itemtype": "Математика",
+    "id_book": 1,
+    "tbn": "Геометрия Углубленный Уровень",
+    "yep": 2025,
+    "fwc": "10 класс",
+    "authors_list": "Мерзляк",
+    "taken": False
 })
 
-print(response.status_code)
-print(response.text)
+response2 = post('http://127.0.0.1:5050/api/textbook', json={
+    "itemtype": "Математика",
+    "id_book": 2,
+    "tbn": "Геометрия Углубленный Уровень",
+    "yep": 2025,
+    "fwc": "10 класс",
+    "authors_list": "Мерзляк",
+    "taken": False
+})
+
+response3 = post('http://127.0.0.1:5050/api/textbook', json={
+    "itemtype": "Математика",
+    "id_book": 3,
+    "tbn": "Геометрия Углубленный Уровень",
+    "yep": 2025,
+    "fwc": "10 класс",
+    "authors_list": "Мерзляк",
+    "taken": False
+})'''
+
+response4 = get('http://127.0.0.1:5050/api/textbook')
+
+print(response4.status_code)
+print(response4.text)
