@@ -6,14 +6,14 @@ headers = {
     "SECRET_KEY": "123sold123"
 }
 
-'''response1 = post('http://127.0.0.1:5050/api/users', json={
+response1 = post('http://127.0.0.1:5050/api/users', json={
     "surname": "Никулин",
     "name": "Илья",
     "middlename": "Алексеевич",
     "email": "ilia.nikulin09@gmail.com",
     "class_name": "10фми-1"
 }, headers=headers)
-
+'''
 response2 = post('http://127.0.0.1:5050/api/users', json={
     "surname": "Епишкин",
     "name": "Кирилл",

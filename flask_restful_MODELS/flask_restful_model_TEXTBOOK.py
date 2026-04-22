@@ -48,7 +48,7 @@ class TextBookListResource(Resource):
     def get(self):
         db_sess = db_session.create_session()
         textbook = db_sess.query(TextBook).all()
-        return flask.jsonify({"textbooks": [item.to_dict(only=("itemtype", "tbn", "yep", "fwc", "id_book", "authors_list", "taken", "tbw")) for item in textbook]})
+        return [item.to_dict(only=("itemtype", "tbn", "yep", "fwc", "id_book", "authors_list", "taken", "tbw")) for item in textbook]
 
 
 class TextBookResource(Resource):

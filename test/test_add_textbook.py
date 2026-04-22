@@ -38,7 +38,7 @@ response3 = post('http://127.0.0.1:5050/api/textbook', json={
     "yep": 2025,
     "fwc": "10 класс",
     "authors_list": "Мерзляк",
-    "taken": False
+    "taken": False 
 })'''
 
 response4 = get('http://127.0.0.1:5050/api/textbook')

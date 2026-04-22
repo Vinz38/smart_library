@@ -51,7 +51,8 @@ class BookListResource(Resource):
     def get(self):
         db_sess = db_session.create_session()
         books = db_sess.query(Book).all()
-        return flask.jsonify({"books": [item.to_dict(only=("name_book", "name_author", "isbn", "yep", "taken", "tbw")) for item in books]})
+        return [item.to_dict(only=("id", "name_book", "name_author", "isbn", "yep", "taken", "tbw")) for item in books]
+    
 
     def post(self):
         args = parser.parse_args()

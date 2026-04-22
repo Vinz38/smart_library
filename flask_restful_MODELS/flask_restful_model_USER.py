@@ -53,7 +53,18 @@ class UserListResource(Resource):
     def get(self):
         db_sess = db_session.create_session()
         user = db_sess.query(User).all()
-        return flask.jsonify({"users": [item.to_dict(only=("surname", "name", "middlename", "email", "class_name", "book_list", "textbook_list")) for item in user]})
+        return [
+            item.to_dict(only=(
+                "surname",
+                "name",
+                "middlename",
+                "email",
+                "class_name",
+                "book_list",
+                "textbook_list"
+            ))
+            for item in user
+        ]
 
     def post(self):
         args = parser.parse_args()
