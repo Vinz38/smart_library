@@ -26,4 +26,4 @@ print(app.url_map)
 
 if __name__ == "__main__":
     db_session.global_init("db/library.db")
-    app.run(port=8080, host="127.0.0.1")
+    app.run(port=5050, host="127.0.0.1")

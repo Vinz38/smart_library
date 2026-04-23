@@ -14,29 +14,136 @@ class LoginWidget(QWidget):
         super().__init__()
         self.switch_to_main = switch_to_main
 
-        layout = QVBoxLayout()
+        main_layout = QVBoxLayout()
 
-        self.inputs = {}
-        fields = ["Фамилия", "Имя", "Отчество", "Email", "Телефон"]
+        # ---------------- REGISTER ----------------
+        self.register_box = QGroupBox("Регистрация")
+        reg_layout = QVBoxLayout()
 
-        for f in fields:
+        self.reg_inputs = {}
+        reg_fields = ["Фамилия", "Имя", "Отчество",
+                      "Email", "Телефон", "Пароль"]
+
+        for f in reg_fields:
             line = QLineEdit()
             line.setPlaceholderText(f)
-            layout.addWidget(line)
-            self.inputs[f] = line
+
+            if f == "Пароль":
+                line.setEchoMode(QLineEdit.EchoMode.Password)
+
+            reg_layout.addWidget(line)
+            self.reg_inputs[f] = line
+
+        self.repeat_password = QLineEdit()
+        self.repeat_password.setPlaceholderText("Повторите пароль")
+        self.repeat_password.setEchoMode(QLineEdit.EchoMode.Password)
+
+        reg_layout.addWidget(self.repeat_password)
+
+        self.register_btn = QPushButton("Зарегистрироваться")
+        self.register_btn.clicked.connect(self.register)
+
+        reg_layout.addWidget(self.register_btn)
+        self.register_box.setLayout(reg_layout)
+
+        # ---------------- LOGIN ----------------
+        self.login_box = QGroupBox("Вход")
+        login_layout = QVBoxLayout()
+
+        self.login_inputs = {}
+        login_fields = ["Фамилия", "Имя",
+                        "Отчество", "Email", "Телефон", "Пароль"]
+
+        for f in login_fields:
+            line = QLineEdit()
+            line.setPlaceholderText(f)
+
+            if f == "Пароль":
+                line.setEchoMode(QLineEdit.EchoMode.Password)
+
+            login_layout.addWidget(line)
+            self.login_inputs[f] = line
 
         self.login_btn = QPushButton("Войти")
-        self.register_btn = QPushButton("Регистрация")
-
         self.login_btn.clicked.connect(self.login)
 
-        layout.addWidget(self.login_btn)
-        layout.addWidget(self.register_btn)
+        login_layout.addWidget(self.login_btn)
+        self.login_box.setLayout(login_layout)
 
-        self.setLayout(layout)
+        # ---------------- SWITCH BUTTONS ----------------
+        self.switch_to_login = QPushButton("Уже есть аккаунт? Войти")
+        self.switch_to_register = QPushButton("Нет аккаунта? Регистрация")
+
+        self.switch_to_login.clicked.connect(self.show_login)
+        self.switch_to_register.clicked.connect(self.show_register)
+
+        # ---------------- ADD TO MAIN ----------------
+        main_layout.addWidget(self.register_box)
+        main_layout.addWidget(self.login_box)
+        main_layout.addWidget(self.switch_to_login)
+        main_layout.addWidget(self.switch_to_register)
+
+        self.setLayout(main_layout)
+
+        # по умолчанию показываем регистрацию
+        self.show_register()
+
+    def show_login(self):
+        self.login_box.show()
+        self.register_box.hide()
+
+    def show_register(self):
+        self.login_box.hide()
+        self.register_box.show()
+
+    def register(self):
+        data = {k: v.text() for k, v in self.reg_inputs.items()}
+        password = data["Пароль"]
+        repeat = self.repeat_password.text()
+
+        if password != repeat:
+            QMessageBox.warning(self, "Ошибка", "Пароли не совпадают")
+            return
+
+        payload = {
+            "surname": data["Фамилия"],
+            "name": data["Имя"],
+            "middlename": data["Отчество"],
+            "email": data["Email"],
+            "phonenumber": data["Телефон"],
+            "password": password
+        }
+
+        try:
+            r = requests.post(
+                "http://127.0.0.1:5050/api/librarian", json=payload)
+            QMessageBox.information(self, "Успех", "Вы зарегистрированы")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", str(e))
 
     def login(self):
-        self.switch_to_main()
+        data = {k: v.text() for k, v in self.login_inputs.items()}
+
+        try:
+            r = requests.get("http://127.0.0.1:5050/api/librarian")
+            users = r.json()
+
+            for u in users:
+                if (
+                    u.get("surname") == data["Фамилия"] and
+                    u.get("name") == data["Имя"] and
+                    u.get("middlename") == data["Отчество"] and
+                    u.get("email") == data["Email"] and
+                    u.get("phonenumber") == data["Телефон"]
+                ):
+                    # ⚠️ пароль надо проверять на сервере, но пока так
+                    self.switch_to_main()
+                    return
+
+            QMessageBox.warning(self, "Ошибка", "Неверные данные")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", str(e))
 
 
 # ---------------- ADD STUDENT DIALOG ----------------
@@ -66,18 +173,22 @@ class AddStudentDialog(QDialog):
 class GiveBookDialog(QDialog):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Выдать книгу ученику")
+        self.setWindowTitle("Выдать книгу")
 
         layout = QVBoxLayout()
 
-        self.input = QLineEdit()
-        self.input.setPlaceholderText("ФИО ученика")
+        self.fio = QLineEdit()
+        self.fio.setPlaceholderText("ФИО ученика")
 
-        self.btn = QPushButton("Выдать")
-        self.btn.clicked.connect(self.accept)
+        self.email = QLineEdit()
+        self.email.setPlaceholderText("Email ученика")
 
-        layout.addWidget(self.input)
-        layout.addWidget(self.btn)
+        btn = QPushButton("Выдать")
+        btn.clicked.connect(self.accept)
+
+        layout.addWidget(self.fio)
+        layout.addWidget(self.email)
+        layout.addWidget(btn)
 
         self.setLayout(layout)
 
@@ -148,12 +259,13 @@ class ClassesWidget(QWidget):
 
         self.combo = QComboBox()
         self.combo.currentTextChanged.connect(self.load_students)
-        self.load_classes()
 
-        self.table = QTableWidget(0, 5)
+        self.table = QTableWidget(0, 6)
         self.table.setHorizontalHeaderLabels([
-            "Фамилия", "Имя", "Отчество", "Email", "Класс"
+            "Фамилия", "Имя", "Отчество", "Email", "Класс", "Список книг", "Список учебников"
         ])
+
+        self.load_classes()
 
         self.search = QTextBrowser()
         self.add_student_btn = QPushButton("Добавить ученика")
@@ -189,6 +301,24 @@ class ClassesWidget(QWidget):
         except Exception as e:
             print("LOAD CLASS ERROR:", e)
 
+    def format_books(self, data):
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except:
+                return ""
+
+        if not isinstance(data, dict):
+            return ""
+
+        result = []
+
+        for item in data.values():
+            name = item.get("namebook") or item.get("tbn") or "Без названия"
+            result.append(name)
+
+        return "\n".join(result)
+
     def load_students(self):
         try:
             selected_class = self.combo.currentText()
@@ -214,6 +344,11 @@ class ClassesWidget(QWidget):
                 table.setItem(row, 3, QTableWidgetItem(user.get("email", "")))
                 table.setItem(row, 4, QTableWidgetItem(
                     user.get("class_name", "")))
+                books_text = self.format_books(user.get("book_list"))
+                textbooks_text = self.format_books(user.get("textbook_list"))
+
+                table.setItem(row, 5, QTableWidgetItem(books_text))
+                table.setItem(row, 6, QTableWidgetItem(textbooks_text))
 
         except Exception as e:
             print("LOAD USERS ERROR:", e)
@@ -296,8 +431,10 @@ class BooksWidget(QWidget):
             for i, book in enumerate(data):
                 self.table.insertRow(i)
 
-                self.table.setItem(i, 0, QTableWidgetItem(
-                    book.get("namebook", "")))
+                item = QTableWidgetItem(book.get("name_book", ""))
+                item.setData(256, book.get("id"))
+                self.table.setItem(i, 0, item)
+
                 self.table.setItem(i, 1, QTableWidgetItem(
                     book.get("name_author", "")))
                 self.table.setItem(
@@ -309,44 +446,105 @@ class BooksWidget(QWidget):
                 self.table.setItem(
                     i, 5, QTableWidgetItem(book.get("tbw", "-")))
 
-                self.table.setCellWidget(i, 6, QPushButton("Выдать"))
-
+                btn = QPushButton("Выдать")
+                btn.clicked.connect(lambda _, r=i: self.give_book(r))
+                self.table.setCellWidget(i, 6, btn)
         except Exception as e:
             print("LOAD BOOKS ERROR:", e)
 
     def give_book(self, row):
         dialog = GiveBookDialog()
 
-        if dialog.exec():
-            student = dialog.input.text()
+        if not dialog.exec():
+            return
 
-            namebook = self.table.item(row, 0).text()
-            author = self.table.item(row, 1).text()
-            isbn = self.table.item(row, 2).text()
-            year = int(self.table.item(row, 3).text())
+        fio = dialog.fio.text()
+        email = dialog.email.text()
 
-            book_id = self.table.item(row, 0).data(256)
+        # --- ищем пользователя ---
+        try:
+            r = requests.get("http://127.0.0.1:5050/api/users")
+            users = r.json()
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", str(e))
+            return
 
-            payload = {
-                "namebook": namebook,
-                "name_author": author,
-                "isbn": isbn,
-                "yep": year,
-                "taken": True,
-                "tbw": student
-            }
+        user = None
+        user_id = None
 
+        for u in users:
+            if u.get("email") == email:
+                user = u
+                user_id = u.get("id")
+                break
+
+        if not user:
+            QMessageBox.warning(self, "Ошибка", "Пользователь не найден")
+            return
+
+        # --- книга ---
+        book_id = self.table.item(row, 0).data(256)
+
+        if not book_id:
+            QMessageBox.warning(self, "Ошибка", "Нет ID книги")
+            return
+
+        payload = {
+            "namebook": self.table.item(row, 0).text(),
+            "name_author": self.table.item(row, 1).text(),
+            "isbn": self.table.item(row, 2).text(),
+            "yep": int(self.table.item(row, 3).text()),
+            "taken": True,
+            "tbw": fio
+        }
+
+        # --- обновляем книгу на сервере ---
+        try:
+            url = f"http://127.0.0.1:5050/api/book/{book_id}"
+            r = requests.put(url, json=payload)
+
+            print("BOOK UPDATE:", r.status_code, r.text)
+
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка книги", str(e))
+            return
+
+        # --- обновляем пользователя (book_list) ---
+        book_list = user.get("book_list", {})
+
+        if isinstance(book_list, str):
             try:
-                url = f"http://127.0.0.1:5050/api/book/{book_id}"
-                r = requests.put(url, json=payload)
+                book_list = json.loads(book_list)
+            except:
+                book_list = {}
 
-                print("GIVE BOOK:", r.status_code, r.text)
+        new_key = str(len(book_list))
+        book_list[new_key] = {
+            "namebook": payload["namebook"],
+            "tbw": fio
+        }
 
-                self.table.setItem(row, 4, QTableWidgetItem("Да"))
-                self.table.setItem(row, 5, QTableWidgetItem(student))
+        user_payload = {
+            "surname": user.get("surname"),
+            "name": user.get("name"),
+            "middlename": user.get("middlename"),
+            "email": user.get("email"),
+            "class_name": user.get("class_name"),
+            "book_list": book_list
+        }
 
-            except Exception as e:
-                print("ERROR GIVE BOOK:", e)
+        try:
+            url = f"http://127.0.0.1:5050/api/users/{user_id}"
+            requests.put(url, json=user_payload)
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка пользователя", str(e))
+            return
+
+        # --- обновляем UI ---
+        self.table.setItem(row, 4, QTableWidgetItem("True"))
+        self.table.setItem(row, 5, QTableWidgetItem(fio))
+
+        QMessageBox.information(self, "Успех", "Книга выдана")
 
     def open_add_dialog(self):
         dialog = AddBookDialog()
@@ -460,8 +658,8 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
 
-        # self.login = LoginWidget(self.show_main)
-        # self.stack.addWidget(self.login)
+        self.login = LoginWidget(self.show_main)
+        self.stack.addWidget(self.login)
 
         self.main_widget = QWidget()
         self.stack.addWidget(self.main_widget)

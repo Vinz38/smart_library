@@ -10,6 +10,7 @@ parser.add_argument('surname', required=True, type=str)
 parser.add_argument('name', required=True, type=str)
 parser.add_argument('middlename', required=True, type=str)
 parser.add_argument('phonenumber', required=True)
+parser.add_argument('email', required=True)
 parser.add_argument('hashed_password', required=True)
 
 
@@ -33,4 +34,4 @@ class LibrarianListResource(Resource):
     def get(self):
         db_sess = db_session.create_session()
         librarian = db_sess.query(Librarian).all()
-        return flask.jsonify({'librarians': [item.to_dict(only=('surname', 'name', 'middlename', 'email', 'phonenumber', 'hashed_password')) for item in librarian]})
+        return [item.to_dict(only=('surname', 'name', 'middlename', 'email', 'phonenumber', 'hashed_password', )) for item in librarian]

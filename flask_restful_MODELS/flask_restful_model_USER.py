@@ -55,6 +55,7 @@ class UserListResource(Resource):
         user = db_sess.query(User).all()
         return [
             item.to_dict(only=(
+                "id",
                 "surname",
                 "name",
                 "middlename",
