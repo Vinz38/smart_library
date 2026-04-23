@@ -327,6 +327,7 @@ class ClassesWidget(QWidget):
         layout.addWidget(self.table)
         layout.addWidget(self.search)
         layout.addWidget(self.add_student_btn)
+        self.add_student_btn.clicked.connect(self.add_student)
 
         self.setLayout(layout)
 
@@ -924,9 +925,9 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
 
-        '''self.login = LoginWidget(self.show_main)
+        self.login = LoginWidget(self.show_main)
         self.stack.addWidget(self.login)
-        '''
+        
         self.main_widget = QWidget()
         self.stack.addWidget(self.main_widget)
 
