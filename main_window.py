@@ -169,6 +169,34 @@ class AddStudentDialog(QDialog):
 
         self.setLayout(layout)
 
+class AddTextbookDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Добавить учебник")
+
+        layout = QVBoxLayout()
+        self.inputs = {}
+
+        fields = [
+            "Тип",
+            "Название",
+            "Автор",
+            "Год",
+            "Класс",
+            "ID книги"
+        ]
+
+        for f in fields:
+            line = QLineEdit()
+            line.setPlaceholderText(f)
+            layout.addWidget(line)
+            self.inputs[f] = line
+
+        self.btn = QPushButton("Добавить")
+        self.btn.clicked.connect(self.accept)
+
+        layout.addWidget(self.btn)
+        self.setLayout(layout)
 
 class GiveBookDialog(QDialog):
     def __init__(self):
@@ -587,7 +615,58 @@ class BooksWidget(QWidget):
 
 
 # ---------------- TEXTBOOKS ----------------
-class TextbooksWidget(BooksWidget):
+class TextbooksWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        main_layout = QVBoxLayout()
+
+        # ---------------- SEARCH ----------------
+        search_box = QGroupBox("Поиск учебников")
+        search_layout = QGridLayout()
+
+        self.search_inputs = {}
+
+        fields = [
+            ("Тип", "itemtype"),
+            ("Название", "tbn"),
+            ("Автор", "authors_list"),
+            ("Год", "yep"),
+            ("Класс", "fwc"),
+            ("ID книги", "id_book")
+        ]
+
+        for i, (label, key) in enumerate(fields):
+            search_layout.addWidget(QLabel(label), i, 0)
+            line = QLineEdit()
+            search_layout.addWidget(line, i, 1)
+            self.search_inputs[key] = line
+
+        self.search_btn = QPushButton("Поиск")
+        self.search_btn.clicked.connect(self.search_textbooks)
+
+        search_layout.addWidget(self.search_btn, len(fields), 0, 1, 2)
+        search_box.setLayout(search_layout)
+
+        # ---------------- TABLE ----------------
+        self.table = QTableWidget(0, 6)
+        self.table.setHorizontalHeaderLabels([
+            "Тип", "Название", "Автор", "Год", "Класс", "ID"
+        ])
+
+        # ---------------- BUTTON ----------------
+        self.add_btn = QPushButton("Добавить учебник")
+        self.add_btn.clicked.connect(self.open_add_dialog)
+
+        main_layout.addWidget(search_box)
+        main_layout.addWidget(self.add_btn)
+        main_layout.addWidget(self.table)
+
+        self.setLayout(main_layout)
+
+        self.load_textbooks()
+
+    # ---------------- LOAD ----------------
     def load_textbooks(self):
         try:
             r = requests.get("http://127.0.0.1:5050/api/textbook")
@@ -595,60 +674,193 @@ class TextbooksWidget(BooksWidget):
 
             self.table.setRowCount(0)
 
-            for i, book in enumerate(data):
+            for i, tb in enumerate(data):
                 self.table.insertRow(i)
 
-                self.table.setItem(i, 0, QTableWidgetItem(book.get("tbn", "")))
-                self.table.setItem(i, 1, QTableWidgetItem(
-                    book.get("authors_list", "")))
+                self.table.setItem(
+                    i, 0, QTableWidgetItem(tb.get("itemtype", "")))
+                self.table.setItem(i, 1, QTableWidgetItem(tb.get("tbn", "")))
                 self.table.setItem(i, 2, QTableWidgetItem(
-                    str(book.get("id_book", ""))))
-                self.table.setItem(i, 3, QTableWidgetItem(
-                    str(book.get("yep", ""))))
-                self.table.setItem(i, 4, QTableWidgetItem(
-                    str(book.get("taken", False))))
-                self.table.setItem(i, 5, QTableWidgetItem(book.get("fwc", "")))
-
-                self.table.setCellWidget(i, 6, QPushButton("Выдать"))
+                    tb.get("authors_list", "")))
+                self.table.setItem(
+                    i, 3, QTableWidgetItem(str(tb.get("yep", ""))))
+                self.table.setItem(i, 4, QTableWidgetItem(tb.get("fwc", "")))
+                self.table.setItem(i, 5, QTableWidgetItem(
+                    str(tb.get("id_book", ""))))
 
         except Exception as e:
             print("LOAD TEXTBOOKS ERROR:", e)
 
+    # ---------------- ADD ----------------
     def open_add_dialog(self):
-        dialog = AddBookDialog()
+        dialog = AddTextbookDialog()
+
         if dialog.exec():
-            row = self.table.rowCount()
-            self.table.insertRow(row)
+            try:
+                payload = {
+                    "itemtype": dialog.inputs["Тип"].text(),
+                    "tbn": dialog.inputs["Название"].text(),
+                    "authors_list": dialog.inputs["Автор"].text(),
+                    "yep": int(dialog.inputs["Год"].text()),
+                    "fwc": dialog.inputs["Класс"].text(),
+                    "id_book": int(dialog.inputs["ID книги"].text()),
+                    "taken": False
+                }
 
-            payload = {
-                "itemtype": dialog.inputs["Название"].text(),
-                "id_book": int(dialog.inputs["ISBN"].text()) if dialog.inputs["ISBN"].text().isdigit() else 0,
-                "tbn": dialog.inputs["Название"].text(),
-                "yep": int(dialog.inputs["Год"].text()) if dialog.inputs["Год"].text().isdigit() else 0,
-                "fwc": "",
-                "authors_list": dialog.inputs["Автор"].text(),
-                "taken": False
-            }
+                r = requests.post(
+                    "http://127.0.0.1:5050/api/textbook",
+                    json=payload
+                )
 
-            self.fill_row(row, {
-                "namebook": payload["tbn"],
-                "name_author": payload["authors_list"],
-                "isbn": payload["id_book"],
-                "yep": payload["yep"]
-            })
+                print("TEXTBOOK:", r.status_code, r.text)
 
-            self.send_textbook(payload)
+                if r.status_code == 200:
+                    QMessageBox.information(self, "OK", "Учебник добавлен")
+                    self.load_textbooks()
+                else:
+                    QMessageBox.critical(self, "Ошибка", r.text)
 
-    def send_textbook(self, payload):
+            except ValueError:
+                QMessageBox.warning(self, "Ошибка", "Год и ID должны быть числами")
+
+    # ---------------- GIVE ----------------
+    def give_textbook(self, row):
+        dialog = GiveBookDialog()
+
+        if not dialog.exec():
+            return
+
+        fio = dialog.fio.text()
+        email = dialog.email.text()
+
+        # --- user search ---
         try:
-            r = requests.post(
-                "http://127.0.0.1:5050/api/textbook", json=payload)
-            print("TEXTBOOK:", r.status_code, r.text)
+            r = requests.get("http://127.0.0.1:5050/api/users")
+            users = r.json()
         except Exception as e:
-            print("TEXTBOOK ERROR:", e)
+            QMessageBox.critical(self, "Ошибка", str(e))
+            return
 
+        user = None
+        user_id = None
+
+        for u in users:
+            if u.get("email") == email:
+                user = u
+                user_id = u.get("id")
+                break
+
+        if not user:
+            QMessageBox.warning(self, "Ошибка", "Пользователь не найден")
+            return
+
+        # --- textbook ---
+        id_book = self.table.item(row, 1).data(256)
+
+        if not id_book:
+            QMessageBox.warning(self, "Ошибка", "Нет ID учебника")
+            return
+
+        payload = {
+            "itemtype": self.table.item(row, 0).text(),
+            "tbn": self.table.item(row, 1).text(),
+            "yep": int(self.table.item(row, 3).text()),
+            "fwc": self.table.item(row, 4).text(),
+            "id_book": id_book,
+            "authors_list": self.table.item(row, 2).text(),
+            "taken": True,
+            "tbw": fio
+        }
+
+        # --- update textbook ---
+        try:
+            url = f"http://127.0.0.1:5050/api/textbook/{id_book}"
+            r = requests.put(url, json=payload)
+
+            print("TEXTBOOK GIVE:", r.status_code, r.text)
+
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", str(e))
+            return
+
+        # --- update user textbook_list ---
+        textbook_list = user.get("textbook_list", {})
+
+        if isinstance(textbook_list, str):
+            try:
+                textbook_list = json.loads(textbook_list)
+            except:
+                textbook_list = {}
+
+        new_key = str(len(textbook_list))
+        textbook_list[new_key] = {
+            "tbn": payload["tbn"],
+            "tbw": fio
+        }
+
+        user_payload = {
+            "surname": user.get("surname"),
+            "name": user.get("name"),
+            "middlename": user.get("middlename"),
+            "email": user.get("email"),
+            "class_name": user.get("class_name"),
+            "textbook_list": textbook_list
+        }
+
+        try:
+            url = f"http://127.0.0.1:5050/api/users/{user_id}"
+            requests.put(url, json=user_payload)
+
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка пользователя", str(e))
+            return
+
+        # --- update UI ---
+        self.table.setItem(row, 5, QTableWidgetItem("True"))
+        self.table.setItem(row, 6, QTableWidgetItem(fio))
+
+        QMessageBox.information(self, "Успех", "Учебник выдан")
+
+    def search_textbooks(self):
+        query = {
+            k: v.text().lower()
+            for k, v in self.search_inputs.items()
+        }
+
+        try:
+            r = requests.get("http://127.0.0.1:5050/api/textbook")
+            data = r.json()
+
+            self.table.setRowCount(0)
+
+            for tb in data:
+                if query["itemtype"] and query["itemtype"] not in tb.get("itemtype", "").lower():
+                    continue
+                if query["tbn"] and query["tbn"] not in tb.get("tbn", "").lower():
+                    continue
+                if query["authors_list"] and query["authors_list"] not in tb.get("authors_list", "").lower():
+                    continue
+                if query["fwc"] and query["fwc"] not in tb.get("fwc", "").lower():
+                    continue
+                if query["id_book"] and query["id_book"] != str(tb.get("id_book", "")):
+                    continue
+
+                row = self.table.rowCount()
+                self.table.insertRow(row)
+
+                self.table.setItem(row, 0, QTableWidgetItem(tb.get("itemtype", "")))
+                self.table.setItem(row, 1, QTableWidgetItem(tb.get("tbn", "")))
+                self.table.setItem(row, 2, QTableWidgetItem(tb.get("authors_list", "")))
+                self.table.setItem(row, 3, QTableWidgetItem(str(tb.get("yep", ""))))
+                self.table.setItem(row, 4, QTableWidgetItem(tb.get("fwc", "")))
+                self.table.setItem(row, 5, QTableWidgetItem(str(tb.get("id_book", ""))))
+
+        except Exception as e:
+            print("SEARCH ERROR:", e)
 
 # ---------------- MAIN ----------------
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -658,9 +870,9 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
 
-        self.login = LoginWidget(self.show_main)
+        '''self.login = LoginWidget(self.show_main)
         self.stack.addWidget(self.login)
-
+        '''
         self.main_widget = QWidget()
         self.stack.addWidget(self.main_widget)
 

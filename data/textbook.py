@@ -5,7 +5,7 @@ from flask_login import UserMixin
 from sqlalchemy_serializer import SerializerMixin
 
 
-class TextBook(SqlAlchemyBase, UserMixin, SerializerMixin):
+class TextBook(SqlAlchemyBase, SerializerMixin):
     __tablename__ = 'textbooks'
 
     id = sqlalchemy.Column(

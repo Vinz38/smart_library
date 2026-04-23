@@ -41,14 +41,16 @@ class TextBookListResource(Resource):
         db_sess.add(textbooks)
         db_sess.commit()
 
-        return flask.jsonify({
-            "status": "success"
-        }), 200
+        return {"status": "success"}, 200
 
     def get(self):
-        db_sess = db_session.create_session()
-        textbook = db_sess.query(TextBook).all()
-        return [item.to_dict(only=("itemtype", "tbn", "yep", "fwc", "id_book", "authors_list", "taken", "tbw")) for item in textbook]
+        try:
+            db_sess = db_session.create_session()
+            textbook = db_sess.query(TextBook).all()
+            return [item.to_dict(only=("id", "itemtype", "tbn", "yep", "fwc", "id_book", "authors_list", "taken", "tbw", )) for item in textbook]
+        except Exception as e:
+            print("TEXTBOOK GET ERROR:", e)
+            return {"error": str(e)}, 500
 
 
 class TextBookResource(Resource):
