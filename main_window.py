@@ -313,6 +313,33 @@ class ClassesWidget(QWidget):
         self.combo = QComboBox()
         self.combo.currentTextChanged.connect(self.load_students)
 
+        search_box = QGroupBox("Поиск учеников")
+        search_layout = QGridLayout()
+
+        self.search_inputs = {}
+
+        fields = [
+            ("Фамилия", "surname"),
+            ("Имя", "name"),
+            ("Отчество", "middlename"),
+            ("Email", "email"),
+            ("Класс", "class_name")
+        ]
+
+        for i, (label, key) in enumerate(fields):
+            search_layout.addWidget(QLabel(label), i, 0)
+            line = QLineEdit()
+            search_layout.addWidget(line, i, 1)
+            self.search_inputs[key] = line
+
+        self.search_btn = QPushButton("Поиск")
+        self.search_btn.clicked.connect(self.search_students)
+
+        search_layout.addWidget(self.search_btn, len(fields), 0, 1, 2)
+        search_box.setLayout(search_layout)
+
+        layout.insertWidget(1, search_box)
+
         self.table = QTableWidget(0, 7)
         self.table.setHorizontalHeaderLabels([
             "Фамилия", "Имя", "Отчество", "Email", "Класс", "Список книг", "Список учебников"
@@ -320,12 +347,10 @@ class ClassesWidget(QWidget):
 
         self.load_classes()
 
-        self.search = QTextBrowser()
         self.add_student_btn = QPushButton("Добавить ученика")
 
         layout.addWidget(self.combo)
         layout.addWidget(self.table)
-        layout.addWidget(self.search)
         layout.addWidget(self.add_student_btn)
         self.add_student_btn.clicked.connect(self.add_student)
 
@@ -341,6 +366,55 @@ class ClassesWidget(QWidget):
 
         except Exception as e:
             print("CLASS ERROR:", e)
+
+
+    def search_students(self):
+        query = {
+            k: v.text().strip().lower()
+            for k, v in self.search_inputs.items()
+        }
+
+        try:
+            r = requests.get("http://127.0.0.1:5050/api/users")
+            data = r.json()
+
+            self.table.setRowCount(0)
+
+            for user in data:
+
+                if query["surname"] and query["surname"] not in user.get("surname", "").lower():
+                    continue
+
+                if query["name"] and query["name"] not in user.get("name", "").lower():
+                    continue
+
+                if query["middlename"] and query["middlename"] not in user.get("middlename", "").lower():
+                    continue
+
+                if query["email"] and query["email"] not in user.get("email", "").lower():
+                    continue
+
+                if query["class_name"] and query["class_name"] not in user.get("class_name", "").lower():
+                    continue
+
+                row = self.table.rowCount()
+                self.table.insertRow(row)
+
+                self.table.setItem(row, 0, QTableWidgetItem(user.get("surname", "")))
+                self.table.setItem(row, 1, QTableWidgetItem(user.get("name", "")))
+                self.table.setItem(row, 2, QTableWidgetItem(user.get("middlename", "")))
+                self.table.setItem(row, 3, QTableWidgetItem(user.get("email", "")))
+                self.table.setItem(row, 4, QTableWidgetItem(user.get("class_name", "")))
+
+                books_text = self.format_books(user.get("book_list"))
+                textbooks_text = self.format_books(user.get("textbook_list"))
+
+                self.table.setItem(row, 5, QTableWidgetItem(books_text))
+                self.table.setItem(row, 6, QTableWidgetItem(textbooks_text))
+
+        except Exception as e:
+            print("SEARCH STUDENTS ERROR:", e)
+            QMessageBox.critical(self, "Ошибка поиска", str(e))
 
     def load_classes(self):
         try:
@@ -454,23 +528,46 @@ class BooksWidget(QWidget):
         super().__init__()
         layout = QVBoxLayout()
 
+        # -------- SEARCH --------
+        search_box = QGroupBox("Поиск книг")
+        search_layout = QGridLayout()
+
+        self.search_inputs = {}
+
+        fields = [
+            ("Название", "namebook"),
+            ("Автор", "name_author"),
+            ("ISBN", "isbn"),
+            ("Год", "yep")
+        ]
+
+        for i, (label, key) in enumerate(fields):
+            search_layout.addWidget(QLabel(label), i, 0)
+            line = QLineEdit()
+            search_layout.addWidget(line, i, 1)
+            self.search_inputs[key] = line
+
+        self.search_btn = QPushButton("Поиск")
+        self.search_btn.clicked.connect(self.search_books)
+
+        search_layout.addWidget(self.search_btn, len(fields), 0, 1, 2)
+        search_box.setLayout(search_layout)
+
+        layout.insertWidget(0, search_box)
+
         self.table = QTableWidget(0, 7)
         self.table.setHorizontalHeaderLabels([
             "Название", "Автор", "ISBN", "Год",
             "Взята", "Кем", "Действие"
         ])
 
+
+        self.add_btn = QPushButton("Добавить книгу")
+        layout.addWidget(self.add_btn)
+
         layout.addWidget(self.table)
         self.load_books()
 
-        bottom = QHBoxLayout()
-        self.search = QTextBrowser()
-        self.add_btn = QPushButton("Добавить книгу")
-
-        bottom.addWidget(self.search)
-        bottom.addWidget(self.add_btn)
-
-        layout.addLayout(bottom)
         self.setLayout(layout)
 
         self.add_btn.clicked.connect(self.open_add_dialog)
@@ -505,6 +602,57 @@ class BooksWidget(QWidget):
                 self.table.setCellWidget(i, 6, btn)
         except Exception as e:
             print("LOAD BOOKS ERROR:", e)
+
+    def search_books(self):
+        query = {
+            k: v.text().strip().lower()
+            for k, v in self.search_inputs.items()
+        }
+
+        try:
+            r = requests.get("http://127.0.0.1:5050/api/book")
+            data = r.json()
+
+            self.table.setRowCount(0)
+
+            for book in data:
+
+                if query["namebook"] and query["namebook"] not in book.get("name_book", "").lower():
+                    continue
+
+                if query["name_author"] and query["name_author"] not in book.get("name_author", "").lower():
+                    continue
+
+                if query["isbn"] and query["isbn"] not in book.get("isbn", "").lower():
+                    continue
+
+                if query["yep"]:
+                    try:
+                        if int(query["yep"]) != int(book.get("yep", 0)):
+                            continue
+                    except ValueError:
+                        pass
+
+                row = self.table.rowCount()
+                self.table.insertRow(row)
+
+                item = QTableWidgetItem(book.get("name_book", ""))
+                item.setData(Qt.ItemDataRole.UserRole, book.get("id"))
+                self.table.setItem(row, 0, item)
+
+                self.table.setItem(row, 1, QTableWidgetItem(book.get("name_author", "")))
+                self.table.setItem(row, 2, QTableWidgetItem(book.get("isbn", "")))
+                self.table.setItem(row, 3, QTableWidgetItem(str(book.get("yep", ""))))
+                self.table.setItem(row, 4, QTableWidgetItem(str(book.get("taken", False))))
+                self.table.setItem(row, 5, QTableWidgetItem(book.get("tbw", "-")))
+
+                btn = QPushButton("Выдать")
+                btn.clicked.connect(lambda _, r=row: self.give_book(r))
+                self.table.setCellWidget(row, 6, btn)
+
+        except Exception as e:
+            print("SEARCH BOOK ERROR:", e)
+            QMessageBox.critical(self, "Ошибка поиска", str(e))
 
     def give_book(self, row):
         dialog = GiveBookDialog()
